@@ -207,6 +207,11 @@ function renderizarDetalhe(receita) {
                   Escolher foto do computador
                   <input class="local-image-input" type="file" accept="image/jpeg,image/png,image/webp">
                 </label>
+                <button type="button" class="secondary-button google-image-button">Abrir Google Imagens</button>
+                <div class="remote-image-row">
+                  <input class="remote-image-input" type="url" placeholder="Cole a URL da imagem">
+                  <button type="button" class="secondary-button remote-image-save">Gravar URL</button>
+                </div>
               </div>
               <div class="image-search-results"></div>
             </div>
@@ -292,7 +297,7 @@ function renderizarResultadosImagem(receita, imagens) {
 
   resultados.innerHTML = imagens.map((imagem) => `
     <button type="button" class="image-choice" data-url="${escaparHtml(imagem.url)}" data-alternativa="${escaparHtml(imagem.thumbnailUrl || "")}" title="${escaparHtml(imagem.titulo || imagem.fonte || "Usar esta foto")}">
-      <img src="${escaparHtml(imagem.thumbnailUrl || imagem.url)}" alt="">
+      <img src="api/internet/imagem-proxy?url=${encodeURIComponent(imagem.thumbnailUrl || imagem.url)}" alt="" loading="lazy">
     </button>
   `).join("");
 
@@ -366,6 +371,37 @@ async function salvarImagemLocal(receita, arquivo) {
   }
 }
 
+async function salvarImagemUrl(receita, urlImagem) {
+  const status = els.detalhe.querySelector(".image-search-status");
+  const url = String(urlImagem || "").trim();
+
+  if (!url) {
+    status.textContent = "Informe a URL da imagem.";
+    return;
+  }
+
+  status.textContent = "Gravando foto pela URL...";
+
+  try {
+    await enviarJson("api/receitas/imagem", {
+      nome: receita.nome,
+      urlImagem: url,
+    });
+    estado.imagemVersao = Date.now();
+    receita.temImagem = true;
+    const imagemPrincipal = els.detalhe.querySelector(".hero-image");
+    imagemPrincipal.src = imagemUrl(receita.nome);
+    estado.receitas = estado.receitas.map((item) => (
+      item.nome === receita.nome ? { ...item, temImagem: true } : item
+    ));
+    renderizarLista();
+    status.textContent = "Foto gravada com sucesso.";
+    window.setTimeout(() => fecharPesquisaImagem(), 700);
+  } catch (err) {
+    status.textContent = err.message;
+  }
+}
+
 function abrirPesquisaImagem() {
   const dialog = els.detalhe.querySelector(".image-search-dialog");
   if (dialog) {
@@ -387,6 +423,9 @@ function configurarPesquisaImagem(receita) {
   const fechar = els.detalhe.querySelector(".image-search-close");
   const dialog = els.detalhe.querySelector(".image-search-dialog");
   const inputLocal = els.detalhe.querySelector(".local-image-input");
+  const botaoGoogle = els.detalhe.querySelector(".google-image-button");
+  const inputUrl = els.detalhe.querySelector(".remote-image-input");
+  const botaoSalvarUrl = els.detalhe.querySelector(".remote-image-save");
 
   fechar.addEventListener("click", fecharPesquisaImagem);
   dialog.addEventListener("click", (event) => {
@@ -398,6 +437,18 @@ function configurarPesquisaImagem(receita) {
     salvarImagemLocal(receita, inputLocal.files[0]).finally(() => {
       inputLocal.value = "";
     });
+  });
+  botaoGoogle.addEventListener("click", () => {
+    window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(receita.nome)}`, "_blank", "noopener");
+  });
+  botaoSalvarUrl.addEventListener("click", () => {
+    salvarImagemUrl(receita, inputUrl.value);
+  });
+  inputUrl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      salvarImagemUrl(receita, inputUrl.value);
+    }
   });
 
   botao.addEventListener("click", async () => {

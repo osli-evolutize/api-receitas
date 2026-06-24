@@ -426,6 +426,8 @@ select {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 12px;
 }
 
@@ -439,6 +441,18 @@ select {
   block-size: 1px;
   opacity: 0;
   pointer-events: none;
+}
+
+.remote-image-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 8px;
+  flex: 1 1 420px;
+  min-width: min(100%, 320px);
+}
+
+.remote-image-row input {
+  min-width: 0;
 }
 
 .image-search-results {
