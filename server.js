@@ -1214,6 +1214,45 @@ function extrairLinksBing(htmlBusca, links) {
   }
 }
 
+function extrairLinksReceitasHtml(htmlBusca, links, baseUrl) {
+  for (const item of String(htmlBusca || "").matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi)) {
+    const href = decodificarHtml(item[1]);
+
+    try {
+      const url = new URL(href, baseUrl);
+      const destino = url.toString();
+
+      if (!/tudogostoso\.com\.br\/receita\/.+\.html/i.test(destino)) continue;
+
+      adicionarLinkUnico(links, destino);
+    } catch {
+      // Ignora links invalidos.
+    }
+
+    if (links.length >= 24) break;
+  }
+}
+
+async function adicionarLinksFontesReceitas(busca, ingredientes, links) {
+  const termos = [busca, ingredientes].filter(Boolean).join(" ").trim();
+  if (!termos) return;
+
+  const urlsBusca = [
+    `https://www.tudogostoso.com.br/busca?q=${encodeURIComponent(termos)}`,
+  ];
+
+  for (const urlBusca of urlsBusca) {
+    try {
+      const html = await baixarTexto(urlBusca, 4 * 1024 * 1024);
+      extrairLinksReceitasHtml(html, links, urlBusca);
+    } catch {
+      // Ignora fonte temporariamente indisponivel.
+    }
+
+    if (links.length >= 24) break;
+  }
+}
+
 async function pesquisarReceitasInternet(res, url) {
   const busca = (url.searchParams.get("busca") || "").trim();
   const ingredientes = (url.searchParams.get("ingredientes") || "").trim();
@@ -1226,6 +1265,8 @@ async function pesquisarReceitasInternet(res, url) {
 
   const consulta = partes.join(" ");
   const links = [];
+
+  await adicionarLinksFontesReceitas(busca, ingredientes, links);
 
   try {
     const htmlDuckDuckGo = await baixarTexto(`https://duckduckgo.com/html/?q=${encodeURIComponent(consulta)}`);
@@ -1246,7 +1287,10 @@ async function pesquisarReceitasInternet(res, url) {
   const receitas = [];
   for (const link of links) {
     try {
-      const html = await baixarTexto(link);
+      const limitePagina = /tudogostoso\.com\.br/i.test(link)
+        ? 8 * 1024 * 1024
+        : 2 * 1024 * 1024;
+      const html = await baixarTexto(link, limitePagina);
       for (const receita of extrairReceitasHtml(html, link)) {
         if (!receitas.some((item) => item.nome.toLowerCase() === receita.nome.toLowerCase())) {
           receitas.push(receita);
