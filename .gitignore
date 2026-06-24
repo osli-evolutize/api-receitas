@@ -1,0 +1,14 @@
+node_modules/
+.env
+npm-debug.log*
+
+migracao-sqlite/node_modules/
+migracao-sqlite/.env
+migracao-sqlite/app.db
+migracao-sqlite/app.db-shm
+migracao-sqlite/app.db-wal
+
+data/*.db
+data/*.db-shm
+data/*.db-wal
+backups/

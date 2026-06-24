@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Receitas</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Lista de receitas">
+        <header class="brand">
+          <figure class="chef-brand">
+            <img src="images/chef-paulo.jpg" alt="MasterChef Paulo">
+            <figcaption>MasterChef Paulo</figcaption>
+          </figure>
+          <div class="brand-title">
+            <div class="brand-title-row">
+              <h1>Receitas</h1>
+              <div class="account-menu" id="menuConta">
+                <button class="brand-action account-toggle" type="button" id="btnConta" aria-expanded="false" aria-controls="painelConta">Login</button>
+                <nav class="account-panel" id="painelConta" aria-label="Acesso e cadastros" hidden>
+                  <button class="account-item" type="button" id="btnLogin">Entrar</button>
+                  <a class="brand-action auth-only" href="importar.html" hidden>Importar web</a>
+                  <a class="brand-action auth-only" href="categorias.html" hidden>Categorias</a>
+                  <a class="brand-action auth-only" href="unidades.html" hidden>Unidades</a>
+                  <a class="brand-action auth-only" href="nova.html" hidden>Nova</a>
+                  <button class="account-item auth-only" type="button" id="btnLogout" hidden>Sair</button>
+                </nav>
+              </div>
+            </div>
+            <p id="totalReceitas">Carregando acervo</p>
+          </div>
+        </header>
+
+        <form class="filters" id="formFiltros">
+          <label for="busca">Pesquisar</label>
+          <input id="busca" name="busca" type="search" autocomplete="off" placeholder="Nome da receita">
+
+          <label for="ingrediente">Ingrediente</label>
+          <input id="ingrediente" name="ingrediente" type="search" autocomplete="off" placeholder="Ex.: frango, tomate, arroz">
+
+          <label for="categoria">Categoria</label>
+          <select id="categoria" name="categoria">
+            <option value="">Todas</option>
+          </select>
+
+          <button type="submit" class="btn-buscar">Buscar</button>
+        </form>
+
+        <div class="list-header">
+          <span id="statusLista">Receitas</span>
+          <button type="button" id="btnLimpar" title="Limpar filtros">Limpar</button>
+        </div>
+
+        <div class="recipe-list" id="listaReceitas" aria-live="polite"></div>
+      </aside>
+
+      <main class="recipe-detail" id="detalheReceita" tabindex="-1">
+        <section class="empty-state">
+          <div class="empty-image"></div>
+          <h2>Selecione uma receita</h2>
+          <p>Use a pesquisa ou a categoria para encontrar uma receita do acervo.</p>
+        </section>
+      </main>
+    </div>
+
+    <div class="login-modal" id="loginModal" hidden>
+      <form class="login-box" id="formLogin">
+        <div class="section-title-row">
+          <h2>Acesso aos cadastros</h2>
+          <button type="button" class="icon-button" id="btnFecharLogin">Fechar</button>
+        </div>
+        <label>
+          Usuario
+          <input name="usuario" autocomplete="username" required>
+        </label>
+        <label>
+          Senha
+          <input name="senha" type="password" autocomplete="current-password" required>
+        </label>
+        <p id="mensagemLogin" aria-live="polite"></p>
+        <button type="submit" class="primary-button">Entrar</button>
+      </form>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

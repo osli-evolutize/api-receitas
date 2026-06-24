@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Categorias</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="form-page">
+    <main class="form-shell narrow-shell">
+      <header class="form-header">
+        <a class="back-link" href="./">Voltar</a>
+        <div>
+          <p class="category-line">Cadastro</p>
+          <h1>Categorias</h1>
+        </div>
+      </header>
+
+      <form class="recipe-form" id="formCategoria">
+        <section class="form-section">
+          <h2>Nova categoria</h2>
+          <div class="category-create-row">
+            <label>
+              Descricao
+              <input name="descricao" maxlength="40" required>
+            </label>
+            <button type="submit" class="primary-button">Salvar</button>
+          </div>
+          <p id="mensagemCategoria" aria-live="polite"></p>
+        </section>
+
+        <section class="form-section">
+          <h2>Categorias cadastradas</h2>
+          <div class="category-table" id="listaCategorias"></div>
+        </section>
+      </form>
+    </main>
+
+    <script src="categorias.js"></script>
+  </body>
+</html>

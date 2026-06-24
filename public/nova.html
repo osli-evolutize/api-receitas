@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nova Receita</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a class="back-link" href="./">Voltar</a>
+        <a class="back-link" href="categorias.html">Categorias</a>
+        <a class="back-link" href="unidades.html">Unidades</a>
+        <div>
+          <p class="category-line">Cadastro</p>
+          <h1>Nova receita</h1>
+        </div>
+      </header>
+
+      <form class="recipe-form" id="formReceita">
+        <section class="form-section">
+          <h2>Dados principais</h2>
+          <div class="form-grid">
+            <label>
+              Nome da receita
+              <input name="nome" maxlength="60" required>
+            </label>
+            <label>
+              Categoria
+              <select name="categoriaCodigo" id="categoriaCodigo" required></select>
+            </label>
+            <label>
+              Pessoas
+              <input name="pessoas" type="number" min="0" step="1" value="0" required>
+            </label>
+            <label>
+              Peso calculado em gramas
+              <input name="peso" type="number" min="0" step="1" value="0" readonly>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h2>Resumo nutricional</h2>
+          <div class="form-grid nutrition-grid">
+            <label>
+              Calorias
+              <input name="calorias" type="number" min="0" step="1" value="0" readonly>
+            </label>
+            <label>
+              Proteinas
+              <input name="proteinas" type="number" min="0" step="1" value="0" readonly>
+            </label>
+            <label>
+              Carboidratos
+              <input name="carboidratos" type="number" min="0" step="1" value="0" readonly>
+            </label>
+            <label>
+              Gorduras
+              <input name="gorduras" type="number" min="0" step="1" value="0" readonly>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title-row">
+            <h2>Ingredientes</h2>
+            <span class="inline-actions">
+              <button type="button" class="secondary-button" id="btnNovoIngrediente">Novo ingrediente</button>
+              <button type="button" class="secondary-button" id="btnAdicionarIngrediente">Adicionar</button>
+            </span>
+          </div>
+          <div class="ingredients-editor" id="ingredientesEditor"></div>
+        </section>
+
+        <section class="form-section ingredient-register" id="cadastroIngrediente" hidden>
+          <div class="section-title-row">
+            <h2>Cadastrar ingrediente</h2>
+            <button type="button" class="icon-button" id="btnFecharIngrediente">Fechar</button>
+          </div>
+          <div class="form-grid nutrition-grid">
+            <label>
+              Nome
+              <input id="novoIngredienteNome" maxlength="60">
+            </label>
+            <label>
+              Calorias por 100 g
+              <input id="novoIngredienteCalorias" type="number" min="0" step="1" value="0">
+            </label>
+            <label>
+              Proteinas por 100 g
+              <input id="novoIngredienteProteinas" type="number" min="0" step="1" value="0">
+            </label>
+            <label>
+              Carboidratos por 100 g
+              <input id="novoIngredienteCarboidratos" type="number" min="0" step="1" value="0">
+            </label>
+            <label>
+              Gorduras por 100 g
+              <input id="novoIngredienteGorduras" type="number" min="0" step="1" value="0">
+            </label>
+            <label>
+              Unidade principal
+              <select id="novoIngredienteUnidade"></select>
+            </label>
+            <label>
+              Peso da medida
+              <input id="novoIngredientePeso" type="number" min="0" step="0.001" value="100">
+            </label>
+          </div>
+          <p class="field-hint">Para grama(s), use 100. Para uma unidade de 120 g, use 0,120. Para 1 xicara de 200 g, use 0,200.</p>
+          <button type="button" class="primary-button" id="btnSalvarIngrediente">Salvar ingrediente</button>
+        </section>
+
+        <section class="form-section">
+          <h2>Preparo</h2>
+          <label>
+            Instrucoes
+            <textarea name="instrucoes" rows="9" required></textarea>
+          </label>
+        </section>
+
+        <section class="form-section">
+          <h2>Imagem</h2>
+          <div class="image-field">
+            <label>
+              Arquivo da foto
+              <input name="imagem" type="file" accept="image/jpeg,image/png,image/webp">
+            </label>
+            <img id="previewImagem" class="image-preview" alt="">
+          </div>
+        </section>
+
+        <footer class="form-actions">
+          <p id="mensagemFormulario" aria-live="polite"></p>
+          <button type="submit" class="primary-button">Salvar receita</button>
+        </footer>
+      </form>
+    </main>
+
+    <template id="templateIngrediente">
+      <div class="ingredient-row">
+        <label>
+          Ingrediente
+          <input name="ingredienteNome" list="listaIngredientes" maxlength="60" required>
+        </label>
+        <label>
+          Quantidade
+          <input name="ingredienteQuantidade" type="number" min="0" step="0.001" value="1" required>
+        </label>
+        <label>
+          Unidade
+          <select name="ingredienteUnidade" required></select>
+        </label>
+        <button type="button" class="icon-button" title="Remover ingrediente">Remover</button>
+      </div>
+    </template>
+
+    <datalist id="listaIngredientes"></datalist>
+
+    <script src="nova-receita.js"></script>
+  </body>
+</html>
