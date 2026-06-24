@@ -492,6 +492,12 @@ select {
   gap: 16px;
 }
 
+.recipe-title-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
 .recipe-title-row h2 {
   margin: 0;
   max-width: 780px;
@@ -499,7 +505,8 @@ select {
   line-height: 1.08;
 }
 
-.recipe-print {
+.recipe-print,
+.recipe-edit {
   display: grid;
   place-items: center;
   flex: 0 0 44px;
@@ -510,6 +517,16 @@ select {
 }
 
 .printer-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.action-icon {
   width: 22px;
   height: 22px;
   fill: none;

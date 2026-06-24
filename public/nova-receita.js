@@ -4,6 +4,8 @@ const estadoCadastro = {
   ingredientes: [],
   ingredientesPorNome: new Map(),
   timersMedidas: new WeakMap(),
+  modoEdicao: false,
+  nomeOriginal: "",
 };
 
 const form = document.querySelector("#formReceita");
@@ -18,6 +20,8 @@ const btnSalvarIngrediente = document.querySelector("#btnSalvarIngrediente");
 const cadastroIngrediente = document.querySelector("#cadastroIngrediente");
 const mensagemFormulario = document.querySelector("#mensagemFormulario");
 const previewImagem = document.querySelector("#previewImagem");
+const tituloFormulario = document.querySelector("#tituloFormulario");
+const btnSalvarReceita = document.querySelector("#btnSalvarReceita");
 
 const novoIngrediente = {
   nome: document.querySelector("#novoIngredienteNome"),
@@ -182,6 +186,7 @@ function adicionarIngrediente(nomeInicial = "") {
   });
 
   ingredientesEditor.appendChild(fragmento);
+  return linha;
 }
 
 function obterLinhaVaziaOuCriar() {
@@ -227,6 +232,7 @@ async function montarPayload() {
   }
 
   return {
+    nomeOriginal: estadoCadastro.nomeOriginal,
     nome: dados.get("nome"),
     categoriaCodigo: Number(dados.get("categoriaCodigo")),
     pessoas: Number(dados.get("pessoas")),
@@ -234,6 +240,48 @@ async function montarPayload() {
     ingredientes: obterIngredientes(),
     imagem,
   };
+}
+
+async function preencherIngredienteReceita(ingrediente) {
+  const linha = adicionarIngrediente(ingrediente.nome || "");
+  linha.querySelector('input[name="ingredienteQuantidade"]').value = ingrediente.quantidade || 0;
+  await carregarMedidas(linha);
+  linha.querySelector('select[name="ingredienteUnidade"]').value = ingrediente.unidade || "";
+  recalcularResumo();
+}
+
+async function carregarReceitaParaEdicao(nome) {
+  const receita = await buscarJson(`api/receitas/detalhe?nome=${encodeURIComponent(nome)}`);
+
+  estadoCadastro.modoEdicao = true;
+  estadoCadastro.nomeOriginal = receita.nome;
+
+  tituloFormulario.textContent = "Editar receita";
+  btnSalvarReceita.textContent = "Salvar alteracoes";
+  form.nome.value = receita.nome;
+  form.categoriaCodigo.value = receita.categoriaCodigo;
+  form.pessoas.value = receita.pessoas;
+  form.instrucoes.value = receita.instrucoes || "";
+  form.peso.value = receita.peso || 0;
+  form.calorias.value = receita.calorias || 0;
+  form.proteinas.value = receita.proteinas || 0;
+  form.carboidratos.value = receita.carboidratos || 0;
+  form.gorduras.value = receita.gorduras || 0;
+
+  if (receita.temImagem) {
+    previewImagem.src = `api/receitas/imagem?nome=${encodeURIComponent(receita.nome)}&v=${Date.now()}`;
+  }
+
+  ingredientesEditor.innerHTML = "";
+  for (const ingrediente of receita.ingredientes || []) {
+    await preencherIngredienteReceita(ingrediente);
+  }
+
+  if (ingredientesEditor.children.length === 0) {
+    adicionarIngrediente();
+  }
+
+  mostrarMensagem("");
 }
 
 function limparCadastroIngrediente() {
@@ -302,21 +350,21 @@ btnSalvarIngrediente.addEventListener("click", () => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  mostrarMensagem("Salvando receita...");
+  mostrarMensagem(estadoCadastro.modoEdicao ? "Salvando alteracoes..." : "Salvando receita...");
 
   try {
     const payload = await montarPayload();
     const resultado = await buscarJson("api/receitas", {
-      method: "POST",
+      method: estadoCadastro.modoEdicao ? "PUT" : "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
 
-    mostrarMensagem("Receita salva com sucesso.", "sucesso");
+    mostrarMensagem(estadoCadastro.modoEdicao ? "Receita atualizada com sucesso." : "Receita salva com sucesso.", "sucesso");
     window.setTimeout(() => {
-      window.location.href = `/?busca=${encodeURIComponent(resultado.nome)}`;
+      window.location.href = `./?busca=${encodeURIComponent(resultado.nome)}`;
     }, 800);
   } catch (err) {
     mostrarMensagem(err.message, "erro");
@@ -336,7 +384,13 @@ async function iniciarCadastro() {
     preencherCategorias();
     preencherUnidades(novoIngrediente.unidade);
     limparCadastroIngrediente();
-    adicionarIngrediente();
+
+    const editar = new URLSearchParams(window.location.search).get("editar");
+    if (editar) {
+      await carregarReceitaParaEdicao(editar);
+    } else {
+      adicionarIngrediente();
+    }
   } catch (err) {
     mostrarMensagem(err.message, "erro");
   }

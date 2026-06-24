@@ -217,14 +217,24 @@ function renderizarDetalhe(receita) {
         <p class="category-line">${escaparHtml(receita.categoria)}</p>
         <div class="recipe-title-row">
           <h2>${escaparHtml(receita.nome)}</h2>
-          <button type="button" class="icon-button recipe-print" aria-label="Imprimir receita" title="Imprimir receita">
-            <svg class="printer-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M7 8V3h10v5"></path>
-              <path d="M7 17H5a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-2"></path>
-              <path d="M7 14h10v7H7z"></path>
-              <path d="M17 11h.01"></path>
-            </svg>
-          </button>
+          <span class="recipe-title-actions">
+            ${estado.autenticado ? `
+              <a class="icon-button recipe-edit" href="nova.html?editar=${encodeURIComponent(receita.nome)}" aria-label="Editar receita" title="Editar receita">
+                <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                </svg>
+              </a>
+            ` : ""}
+            <button type="button" class="icon-button recipe-print" aria-label="Imprimir receita" title="Imprimir receita">
+              <svg class="printer-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M7 8V3h10v5"></path>
+                <path d="M7 17H5a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-2"></path>
+                <path d="M7 14h10v7H7z"></path>
+                <path d="M17 11h.01"></path>
+              </svg>
+            </button>
+          </span>
         </div>
         <div class="stats" aria-label="Resumo nutricional">
           <div class="stat"><strong>${escaparHtml(receita.pessoas)}</strong><span>Pessoas</span></div>

@@ -610,13 +610,36 @@ async function calcularResumoReceita(transaction, ingredientes) {
           m.IngredienteMedidaPeso AS pesoMedida
         FROM dbo.Ingrediente i
         INNER JOIN dbo.IngredienteMedida m
-          ON m.IngredienteNome = i.IngredienteNome
-         AND m.IngredienteMedidaUnidade = @unidade
-        WHERE i.IngredienteNome = @nome;
+          ON LTRIM(RTRIM(m.IngredienteNome)) = LTRIM(RTRIM(i.IngredienteNome))
+         AND LTRIM(RTRIM(m.IngredienteMedidaUnidade)) = @unidade
+        WHERE LTRIM(RTRIM(i.IngredienteNome)) = @nome;
       `);
 
     if (resultado.recordset.length === 0) {
-      throw new Error(`Ingrediente ou medida nao cadastrada: ${ingrediente.nome}`);
+      const unidadeNormalizada = String(ingrediente.unidade || "").trim().toLowerCase();
+
+      if (unidadeNormalizada === "grama(s)" || unidadeNormalizada === "gramas" || unidadeNormalizada === "g") {
+        const ingredienteResultado = await new sql.Request(transaction)
+          .input("nome", sql.VarChar(60), ingrediente.nome)
+          .query(`
+            SELECT
+              IngredienteCalorias AS calorias,
+              IngredienteProteinas AS proteinas,
+              IngredienteCarboidratos AS carboidratos,
+              IngredienteGorduras AS gorduras,
+              100 AS pesoMedida
+            FROM dbo.Ingrediente
+            WHERE LTRIM(RTRIM(IngredienteNome)) = @nome;
+          `);
+
+        if (ingredienteResultado.recordset.length === 0) {
+          throw new Error(`Ingrediente ou medida nao cadastrada: ${ingrediente.nome}`);
+        }
+
+        resultado.recordset = ingredienteResultado.recordset;
+      } else {
+        throw new Error(`Ingrediente ou medida nao cadastrada: ${ingrediente.nome}`);
+      }
     }
 
     const base = resultado.recordset[0];
@@ -783,6 +806,134 @@ async function criarReceita(req, res) {
   }
 
   enviarJson(res, 201, {
+    ok: true,
+    nome,
+  });
+}
+
+async function atualizarReceita(req, res) {
+  const dados = await lerCorpoJson(req);
+  const nomeOriginal = textoObrigatorio(dados.nomeOriginal || dados.nomeAnterior || dados.nome, "a receita original", 60).toUpperCase();
+  const nome = textoObrigatorio(dados.nome, "o nome da receita", 60).toUpperCase();
+  const instrucoes = textoObrigatorio(dados.instrucoes, "o preparo", 8000);
+  const categoriaCodigo = numeroInteiro(dados.categoriaCodigo, "Categoria");
+  const pessoas = numeroInteiro(dados.pessoas, "Pessoas");
+  const ingredientes = Array.isArray(dados.ingredientes) ? dados.ingredientes : [];
+  const imagem = prepararImagemReceita(nome, dados.imagem);
+
+  if (ingredientes.length === 0) {
+    throw new Error("Informe ao menos um ingrediente");
+  }
+
+  const ingredientesValidos = ingredientes.map((item) => ({
+    nome: textoObrigatorio(item.nome, "o nome do ingrediente", 60).toUpperCase(),
+    quantidade: numeroDecimal(item.quantidade, "Quantidade"),
+    unidade: textoObrigatorio(item.unidade, "a unidade do ingrediente", 20),
+    tipo: String(item.tipo || "s").trim().slice(0, 1) || "s",
+  }));
+
+  const pool = await obterPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const existente = await new sql.Request(transaction)
+      .input("nomeOriginal", sql.VarChar(60), nomeOriginal)
+      .query("SELECT 1 AS existe FROM dbo.Receita WHERE ReceitaNome = @nomeOriginal;");
+
+    if (existente.recordset.length === 0) {
+      throw new Error("Receita nao encontrada");
+    }
+
+    if (nome !== nomeOriginal) {
+      const duplicada = await new sql.Request(transaction)
+        .input("nome", sql.VarChar(60), nome)
+        .query("SELECT 1 AS existe FROM dbo.Receita WHERE ReceitaNome = @nome;");
+
+      if (duplicada.recordset.length > 0) {
+        throw new Error("Ja existe uma receita com esse nome");
+      }
+    }
+
+    const resumo = await calcularResumoReceita(transaction, ingredientesValidos);
+
+    await new sql.Request(transaction)
+      .input("nomeOriginal", sql.VarChar(60), nomeOriginal)
+      .query("DELETE FROM dbo.ReceitaIngrediente WHERE ReceitaNome = @nomeOriginal;");
+
+    const updateImagem = imagem ? ", ReceitaImagem = @imagem" : "";
+    const requisicaoReceita = new sql.Request(transaction)
+      .input("nomeOriginal", sql.VarChar(60), nomeOriginal)
+      .input("nome", sql.VarChar(60), nome)
+      .input("instrucoes", sql.VarChar(sql.MAX), instrucoes)
+      .input("pessoas", sql.Int, pessoas)
+      .input("peso", sql.Int, resumo.peso)
+      .input("calorias", sql.Int, resumo.calorias)
+      .input("proteinas", sql.Int, resumo.proteinas)
+      .input("carboidratos", sql.Int, resumo.carboidratos)
+      .input("gorduras", sql.Int, resumo.gorduras)
+      .input("categoriaCodigo", sql.SmallInt, categoriaCodigo);
+
+    if (imagem) {
+      requisicaoReceita.input("imagem", sql.VarBinary(sql.MAX), imagem.bytes);
+    }
+
+    await requisicaoReceita.query(`
+      UPDATE dbo.Receita
+      SET
+        ReceitaNome = CAST(@nome AS varchar(60)),
+        ReceitaInstrucoes = @instrucoes,
+        ReceitaPessoas = @pessoas,
+        ReceitaPeso = @peso,
+        ReceitaCalorias = @calorias,
+        ReceitaProteinas = @proteinas,
+        ReceitaCarboidratos = @carboidratos,
+        ReceitaGorduras = @gorduras,
+        CategoriaCodigo = @categoriaCodigo
+        ${updateImagem}
+      WHERE ReceitaNome = @nomeOriginal;
+    `);
+
+    for (const ingrediente of ingredientesValidos) {
+      await new sql.Request(transaction)
+        .input("receitaNome", sql.VarChar(60), nome)
+        .input("ingredienteNome", sql.VarChar(60), ingrediente.nome)
+        .input("quantidade", sql.Decimal(18, 6), ingrediente.quantidade)
+        .input("unidade", sql.VarChar(20), ingrediente.unidade)
+        .input("tipo", sql.VarChar(1), ingrediente.tipo)
+        .query(`
+          INSERT INTO dbo.ReceitaIngrediente (
+            ReceitaNome,
+            IngredienteNome,
+            ReceitaIngredienteQuantidade,
+            ReceitaIngredienteUnidade,
+            ReceitaIngredienteTipo
+          )
+          VALUES (
+            @receitaNome,
+            @ingredienteNome,
+            @quantidade,
+            @unidade,
+            @tipo
+          );
+        `);
+    }
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+
+  if (imagem) {
+    removerImagemLocalReceita(nomeOriginal);
+    removerImagemLocalReceita(nome);
+  } else if (nome !== nomeOriginal) {
+    renomearImagemLocalReceita(nomeOriginal, nome);
+  }
+
+  enviarJson(res, 200, {
     ok: true,
     nome,
   });
@@ -1695,6 +1846,27 @@ function removerImagemLocalReceita(nome) {
   }
 }
 
+function renomearImagemLocalReceita(nomeOriginal, nomeNovo) {
+  const baseOriginal = normalizarNomeArquivo(nomeOriginal);
+  const baseNovo = normalizarNomeArquivo(nomeNovo);
+
+  if (!baseOriginal || !baseNovo || baseOriginal === baseNovo) return;
+
+  for (const extensao of [".jpg", ".jpeg", ".png", ".webp"]) {
+    const origem = path.join(imagensReceitasDir, `${baseOriginal}${extensao}`);
+    const destino = path.join(imagensReceitasDir, `${baseNovo}${extensao}`);
+
+    if (fs.existsSync(origem)) {
+      fs.mkdirSync(imagensReceitasDir, { recursive: true });
+      if (fs.existsSync(destino)) {
+        fs.unlinkSync(destino);
+      }
+      fs.renameSync(origem, destino);
+      return;
+    }
+  }
+}
+
 async function salvarImagemReceitaInternet(req, res) {
   const dados = await lerCorpoJson(req, 1024 * 1024);
   const nome = textoObrigatorio(dados.nome, "o nome da receita", 60).toUpperCase();
@@ -1841,6 +2013,12 @@ async function tratarApi(req, res, url) {
     if (req.method === "POST" && url.pathname === "/api/receitas") {
       if (!exigirAutenticacao(req, res)) return;
       await criarReceita(req, res);
+      return;
+    }
+
+    if (req.method === "PUT" && url.pathname === "/api/receitas") {
+      if (!exigirAutenticacao(req, res)) return;
+      await atualizarReceita(req, res);
       return;
     }
 
