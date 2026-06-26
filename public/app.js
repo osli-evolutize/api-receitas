@@ -138,6 +138,11 @@ function fecharLogin() {
   els.loginModal.hidden = true;
 }
 
+function fecharDetalheMobile() {
+  document.body.classList.remove("detail-open");
+  els.lista.focus({ preventScroll: true });
+}
+
 async function carregarAutenticacao() {
   const auth = await buscarJson("api/auth/status");
   aplicarEstadoAutenticacao(Boolean(auth.autenticado));
@@ -186,6 +191,13 @@ function renderizarDetalhe(receita) {
   `).join("");
 
   els.detalhe.innerHTML = `
+    <button type="button" class="icon-button mobile-detail-close" aria-label="Fechar visualizacao">
+      <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M18 6 6 18"></path>
+        <path d="m6 6 12 12"></path>
+      </svg>
+      Fechar
+    </button>
     <section class="detail-hero">
       <div class="recipe-photo-block">
         <div class="recipe-photo-frame">
@@ -282,6 +294,7 @@ function renderizarDetalhe(receita) {
   configurarImpressaoReceita(receita);
   configurarListaCompras(receita);
   configurarPesquisaImagem(receita);
+  els.detalhe.querySelector(".mobile-detail-close")?.addEventListener("click", fecharDetalheMobile);
   els.detalhe.focus({ preventScroll: true });
 }
 
@@ -607,11 +620,19 @@ function configurarListaCompras(receita) {
 
 function renderizarErro(mensagem) {
   els.detalhe.innerHTML = `
+    <button type="button" class="icon-button mobile-detail-close" aria-label="Fechar visualizacao">
+      <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M18 6 6 18"></path>
+        <path d="m6 6 12 12"></path>
+      </svg>
+      Fechar
+    </button>
     <section class="error-state">
       <h2>Nao foi possivel carregar</h2>
       <p>${escaparHtml(mensagem)}</p>
     </section>
   `;
+  els.detalhe.querySelector(".mobile-detail-close")?.addEventListener("click", fecharDetalheMobile);
 }
 
 async function carregarCategorias() {
@@ -643,7 +664,11 @@ async function carregarReceitas(selecionarPrimeira = false) {
   }
 }
 
-async function carregarDetalhe(nome) {
+async function carregarDetalhe(nome, opcoes = {}) {
+  if (opcoes.abrirOverlay) {
+    document.body.classList.add("detail-open");
+  }
+
   els.detalhe.innerHTML = '<section class="loading">Carregando receita...</section>';
   els.detalhe.scrollTo({ top: 0 });
 
@@ -736,7 +761,13 @@ els.lista.addEventListener("click", (event) => {
   const card = event.target.closest(".recipe-card");
   if (!card) return;
 
-  carregarDetalhe(card.dataset.nome).catch((err) => renderizarErro(err.message));
+  carregarDetalhe(card.dataset.nome, { abrirOverlay: true }).catch((err) => renderizarErro(err.message));
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && document.body.classList.contains("detail-open")) {
+    fecharDetalheMobile();
+  }
 });
 
 async function iniciar() {
