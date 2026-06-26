@@ -489,6 +489,7 @@ function imprimirReceita(receita) {
       <head>
         <meta charset="utf-8">
         <title>Receita - ${escaparHtml(receita.nome)}</title>
+        <link rel="icon" type="image/jpeg" href="images/chef-paulo.jpg">
         <style>
           body { font-family: Arial, sans-serif; margin: 32px; color: #222; line-height: 1.45; }
           h1 { margin: 0 0 6px; font-size: 30px; }
@@ -567,6 +568,7 @@ function imprimirListaCompras(receita, pessoasDesejadas) {
       <head>
         <meta charset="utf-8">
         <title>Lista de compras - ${escaparHtml(receita.nome)}</title>
+        <link rel="icon" type="image/jpeg" href="images/chef-paulo.jpg">
         <style>
           body { font-family: Arial, sans-serif; margin: 32px; color: #222; }
           h1 { margin: 0 0 6px; font-size: 28px; }
