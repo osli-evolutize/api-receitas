@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "images:download": "node scripts/baixar-imagens-openverse.js"
+    "images:download": "node scripts/baixar-imagens-openverse.js",
+    "textos:corrigir": "node scripts/corrigir-textos-sqlite.js"
   },
   "engines": {
     "node": ">=20"

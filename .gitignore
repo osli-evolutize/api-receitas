@@ -4,9 +4,9 @@ npm-debug.log*
 
 migracao-sqlite/node_modules/
 migracao-sqlite/.env
-migracao-sqlite/app.db
-migracao-sqlite/app.db-shm
-migracao-sqlite/app.db-wal
+migracao-sqlite/*.db
+migracao-sqlite/*.db-shm
+migracao-sqlite/*.db-wal
 
 data/*.db
 data/*.db-shm
