@@ -12,7 +12,7 @@ const port = Number(process.env.APP_PORT || 3001);
 const publicDir = path.join(__dirname, "public");
 const imagensReceitasDir = path.join(publicDir, "images", "receitas");
 const sessoes = new Map();
-const paginasProtegidas = new Set(["/nova.html", "/categorias.html", "/unidades.html", "/importar.html"]);
+const paginasProtegidas = new Set(["/nova.html", "/categorias.html", "/unidades.html", "/importar.html", "/usuarios.html"]);
 
 const dbConfig = {
   filename: process.env.SQLITE_FILE || path.join(__dirname, "migracao-sqlite", "app.db"),
@@ -180,6 +180,119 @@ function logout(req, res) {
   enviarJsonComHeaders(res, 200, { ok: true }, {
     "Set-Cookie": "receitasSessao=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0",
   });
+}
+
+async function listarUsuarios(res) {
+  const pool = await obterPool();
+  const resultado = await pool.request().query(`
+    SELECT
+      LTRIM(RTRIM(usucod)) AS codigo,
+      LTRIM(RTRIM(usunome)) AS nome,
+      usuperfil AS perfil
+    FROM dbo.Usuario
+    ORDER BY LTRIM(RTRIM(usucod));
+  `);
+
+  enviarJson(res, 200, resultado.recordset);
+}
+
+async function salvarUsuario(req, res) {
+  const dados = await lerCorpoJson(req, 32 * 1024);
+  const codigoOriginal = String(dados.codigoOriginal || "").trim();
+  const codigo = String(dados.codigo || "").trim();
+  const nome = String(dados.nome || "").trim();
+  const senha = String(dados.senha || "");
+  const perfil = Number(dados.perfil || 0);
+
+  if (!codigo || !nome) {
+    enviarJson(res, 400, { erro: "Informe usuario e nome" });
+    return;
+  }
+
+  if (!codigoOriginal && !senha) {
+    enviarJson(res, 400, { erro: "Informe a senha" });
+    return;
+  }
+
+  const pool = await obterPool();
+  const existente = await pool.request()
+    .input("codigo", sql.VarChar(60), codigo)
+    .query(`
+      SELECT TOP 1 LTRIM(RTRIM(usucod)) AS codigo
+      FROM dbo.Usuario
+      WHERE LTRIM(RTRIM(usucod)) = @codigo;
+    `);
+
+  if (existente.recordset.length && (!codigoOriginal || existente.recordset[0].codigo !== codigoOriginal)) {
+    enviarJson(res, 409, { erro: "Ja existe um usuario com este codigo" });
+    return;
+  }
+
+  if (codigoOriginal) {
+    const request = pool.request()
+      .input("codigoOriginal", sql.VarChar(60), codigoOriginal)
+      .input("codigo", sql.VarChar(60), codigo)
+      .input("nome", sql.VarChar(60), nome)
+      .input("perfil", sql.Int, perfil);
+
+    if (senha) request.input("senha", sql.VarChar(20), senha);
+
+    const resultado = await request.query(`
+      UPDATE dbo.Usuario
+      SET
+        usucod = @codigo,
+        usunome = @nome,
+        usuperfil = @perfil
+        ${senha ? ", ususenha = @senha" : ""}
+      WHERE LTRIM(RTRIM(usucod)) = @codigoOriginal;
+      SELECT @@ROWCOUNT AS alteradas;
+    `);
+
+    if (!resultado.recordset[0]?.alteradas) {
+      enviarJson(res, 404, { erro: "Usuario nao encontrado" });
+      return;
+    }
+
+    enviarJson(res, 200, { ok: true });
+    return;
+  }
+
+  await pool.request()
+    .input("codigo", sql.VarChar(60), codigo)
+    .input("nome", sql.VarChar(60), nome)
+    .input("senha", sql.VarChar(20), senha)
+    .input("perfil", sql.Int, perfil)
+    .query(`
+      INSERT INTO dbo.Usuario (usucod, usunome, ususenha, usuperfil)
+      VALUES (@codigo, @nome, @senha, @perfil);
+    `);
+
+  enviarJson(res, 201, { ok: true });
+}
+
+async function excluirUsuario(req, res, url) {
+  const codigo = String(url.searchParams.get("codigo") || "").trim();
+
+  if (!codigo) {
+    enviarJson(res, 400, { erro: "Informe o usuario" });
+    return;
+  }
+
+  const pool = await obterPool();
+  const resultado = await pool.request()
+    .input("codigo", sql.VarChar(60), codigo)
+    .query(`
+      DELETE FROM dbo.Usuario
+      WHERE LTRIM(RTRIM(usucod)) = @codigo;
+      SELECT @@ROWCOUNT AS alteradas;
+    `);
+
+  if (!resultado.recordset[0]?.alteradas) {
+    enviarJson(res, 404, { erro: "Usuario nao encontrado" });
+    return;
+  }
+
+  enviarJson(res, 200, { ok: true });
 }
 
 function cryptoRandomToken() {
@@ -2116,6 +2229,24 @@ async function tratarApi(req, res, url) {
         arquivo: dbClient === "sqlite" ? dbConfig.filename : undefined,
         dataHora: new Date().toISOString(),
       });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/usuarios") {
+      if (!exigirAutenticacao(req, res)) return;
+      await listarUsuarios(res);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/usuarios") {
+      if (!exigirAutenticacao(req, res)) return;
+      await salvarUsuario(req, res);
+      return;
+    }
+
+    if (req.method === "DELETE" && url.pathname === "/api/usuarios") {
+      if (!exigirAutenticacao(req, res)) return;
+      await excluirUsuario(req, res, url);
       return;
     }
 

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Usuarios</title>
+    <link rel="icon" type="image/jpeg" href="images/chef-paulo.jpg">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="form-page">
+    <main class="form-shell narrow-shell">
+      <header class="form-header">
+        <a class="back-link" href="./">Voltar</a>
+        <div>
+          <p class="category-line">Cadastro</p>
+          <h1>Usuarios</h1>
+        </div>
+      </header>
+
+      <form class="recipe-form" id="formUsuario">
+        <section class="form-section">
+          <h2 id="tituloFormulario">Novo usuario</h2>
+          <input type="hidden" name="codigoOriginal">
+          <div class="form-grid">
+            <label>
+              Usuario
+              <input name="codigo" maxlength="60" autocomplete="username" required>
+            </label>
+            <label>
+              Nome
+              <input name="nome" maxlength="60" required>
+            </label>
+            <label>
+              Senha
+              <input name="senha" type="password" maxlength="20" autocomplete="new-password">
+            </label>
+            <label>
+              Perfil
+              <input name="perfil" type="number" step="1" value="0">
+            </label>
+          </div>
+          <p class="field-hint">Ao editar, deixe a senha em branco para manter a senha atual.</p>
+          <div class="form-actions">
+            <p id="mensagemUsuario" aria-live="polite"></p>
+            <div class="inline-actions">
+              <button type="button" class="secondary-button" id="btnNovo">Novo</button>
+              <button type="submit" class="primary-button">Salvar</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h2>Usuarios cadastrados</h2>
+          <div class="category-table" id="listaUsuarios"></div>
+        </section>
+      </form>
+    </main>
+
+    <script src="usuarios.js"></script>
+  </body>
+</html>

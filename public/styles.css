@@ -1147,6 +1147,22 @@ select {
   font-weight: 700;
 }
 
+#mensagemUsuario {
+  min-height: 22px;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+#mensagemUsuario[data-tipo="sucesso"] {
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+#mensagemUsuario[data-tipo="erro"] {
+  color: var(--tomato);
+  font-weight: 700;
+}
+
 #mensagemImportacao {
   min-height: 22px;
   margin: 12px 0 0;
@@ -1256,6 +1272,17 @@ select {
   color: var(--accent-dark);
 }
 
+.user-row {
+  grid-template-columns: 110px minmax(160px, 1fr) 100px 90px auto;
+  align-items: center;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .unit-row {
   grid-template-columns: 1fr;
 }
@@ -1278,6 +1305,7 @@ select {
   .form-grid,
   .nutrition-grid,
   .ingredient-row,
+  .user-row,
   .image-field,
   .category-create-row,
   .unit-create-row {
