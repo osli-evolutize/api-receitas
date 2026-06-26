@@ -200,8 +200,8 @@ function resolverBanco() {
   const candidatos = [
     caminhoInformado,
     process.env.SQLITE_FILE,
-    path.join(__dirname, "..", "data", "app.db"),
-    path.join(__dirname, "..", "migracao-sqlite", "app.db")
+    path.join(__dirname, "..", "migracao-sqlite", "app.db"),
+    path.join(__dirname, "..", "data", "app.db")
   ].filter(Boolean);
 
   for (const candidato of candidatos) {
