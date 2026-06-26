@@ -105,10 +105,32 @@ function usuarioAutenticado(req) {
   return Boolean(token && sessoes.has(token));
 }
 
+function obterSessao(req) {
+  const token = lerCookies(req).receitasSessao;
+  return token ? sessoes.get(token) : null;
+}
+
+function usuarioAdmin(req) {
+  const sessao = obterSessao(req);
+  return String(sessao?.usuario || "").trim().toLowerCase() === "admin";
+}
+
 function exigirAutenticacao(req, res) {
   if (usuarioAutenticado(req)) return true;
 
   enviarJson(res, 401, { erro: "Login necessario para acessar cadastros" });
+  return false;
+}
+
+function exigirAdmin(req, res) {
+  if (usuarioAdmin(req)) return true;
+
+  if (!usuarioAutenticado(req)) {
+    enviarJson(res, 401, { erro: "Login necessario para acessar cadastros" });
+    return false;
+  }
+
+  enviarJson(res, 403, { erro: "Acesso permitido apenas para o usuario admin" });
   return false;
 }
 
@@ -2233,19 +2255,19 @@ async function tratarApi(req, res, url) {
     }
 
     if (req.method === "GET" && url.pathname === "/api/usuarios") {
-      if (!exigirAutenticacao(req, res)) return;
+      if (!exigirAdmin(req, res)) return;
       await listarUsuarios(res);
       return;
     }
 
     if (req.method === "POST" && url.pathname === "/api/usuarios") {
-      if (!exigirAutenticacao(req, res)) return;
+      if (!exigirAdmin(req, res)) return;
       await salvarUsuario(req, res);
       return;
     }
 
     if (req.method === "DELETE" && url.pathname === "/api/usuarios") {
-      if (!exigirAutenticacao(req, res)) return;
+      if (!exigirAdmin(req, res)) return;
       await excluirUsuario(req, res, url);
       return;
     }
@@ -2372,6 +2394,14 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && paginasProtegidas.has(url.pathname) && !usuarioAutenticado(req)) {
     res.writeHead(302, {
       Location: "./?login=1",
+    });
+    res.end();
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/usuarios.html" && !usuarioAdmin(req)) {
+    res.writeHead(302, {
+      Location: "./",
     });
     res.end();
     return;

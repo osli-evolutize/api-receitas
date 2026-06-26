@@ -3,6 +3,7 @@ const estado = {
   categorias: [],
   selecionada: "",
   autenticado: false,
+  usuario: "",
   imagemVersao: Date.now(),
 };
 
@@ -16,6 +17,8 @@ const els = {
   statusLista: document.querySelector("#statusLista"),
   totalReceitas: document.querySelector("#totalReceitas"),
   btnLimpar: document.querySelector("#btnLimpar"),
+  btnFiltrosAvancados: document.querySelector("#btnFiltrosAvancados"),
+  filtrosAvancados: document.querySelector("#filtrosAvancados"),
   menuConta: document.querySelector("#menuConta"),
   btnConta: document.querySelector("#btnConta"),
   painelConta: document.querySelector("#painelConta"),
@@ -97,10 +100,16 @@ function arquivoParaBase64(arquivo) {
   });
 }
 
-function aplicarEstadoAutenticacao(autenticado) {
+function usuarioEhAdmin(usuario) {
+  return String(usuario || "").trim().toLowerCase() === "admin";
+}
+
+function aplicarEstadoAutenticacao(autenticado, usuario = "") {
   estado.autenticado = autenticado;
+  estado.usuario = autenticado ? usuario : "";
+  const admin = autenticado && usuarioEhAdmin(usuario);
   els.authOnly.forEach((item) => {
-    item.hidden = !autenticado;
+    item.hidden = !autenticado || (item.classList.contains("admin-only") && !admin);
   });
   els.btnLogin.hidden = autenticado;
   els.btnConta.textContent = autenticado ? "Cadastros" : "Login";
@@ -143,9 +152,20 @@ function fecharDetalheMobile() {
   els.lista.focus({ preventScroll: true });
 }
 
+function alternarFiltrosAvancados(forcarAberto) {
+  const abrir = typeof forcarAberto === "boolean"
+    ? forcarAberto
+    : !els.filtrosAvancados.classList.contains("is-open");
+
+  els.filtrosAvancados.classList.toggle("is-open", abrir);
+  els.formFiltros.classList.toggle("advanced-open", abrir);
+  els.btnFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
+  els.btnFiltrosAvancados.textContent = abrir ? "Menos filtros" : "Mais filtros";
+}
+
 async function carregarAutenticacao() {
   const auth = await buscarJson("api/auth/status");
-  aplicarEstadoAutenticacao(Boolean(auth.autenticado));
+  aplicarEstadoAutenticacao(Boolean(auth.autenticado), auth.usuario);
 }
 
 function renderizarLista() {
@@ -697,8 +717,11 @@ els.btnLimpar.addEventListener("click", () => {
   els.ingrediente.value = "";
   els.categoria.value = "";
   estado.selecionada = "";
+  alternarFiltrosAvancados(false);
   carregarReceitas(true).catch((err) => renderizarErro(err.message));
 });
+
+els.btnFiltrosAvancados.addEventListener("click", () => alternarFiltrosAvancados());
 
 els.btnConta.addEventListener("click", alternarMenuConta);
 
@@ -733,11 +756,11 @@ els.formLogin.addEventListener("submit", async (event) => {
 
   try {
     const dados = new FormData(els.formLogin);
-    await enviarJson("api/auth/login", {
+    const auth = await enviarJson("api/auth/login", {
       usuario: dados.get("usuario"),
       senha: dados.get("senha"),
     });
-    aplicarEstadoAutenticacao(true);
+    aplicarEstadoAutenticacao(true, auth.usuario);
     fecharLogin();
     if (estado.selecionada) {
       await carregarDetalhe(estado.selecionada);

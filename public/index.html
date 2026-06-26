@@ -25,7 +25,7 @@
                   <a class="brand-action auth-only" href="importar.html" hidden>Importar web</a>
                   <a class="brand-action auth-only" href="categorias.html" hidden>Categorias</a>
                   <a class="brand-action auth-only" href="unidades.html" hidden>Unidades</a>
-                  <a class="brand-action auth-only" href="usuarios.html" hidden>Usuarios</a>
+                  <a class="brand-action auth-only admin-only" href="usuarios.html" hidden>Usuarios</a>
                   <a class="brand-action auth-only" href="nova.html" hidden>Nova</a>
                   <button class="account-item auth-only" type="button" id="btnLogout" hidden>Sair</button>
                 </nav>
@@ -39,21 +39,31 @@
           <label for="busca">Pesquisar</label>
           <input id="busca" name="busca" type="search" autocomplete="off" placeholder="Nome da receita">
 
-          <label for="ingrediente">Ingrediente</label>
-          <input id="ingrediente" name="ingrediente" type="search" autocomplete="off" placeholder="Ex.: frango, tomate, arroz">
+          <button type="button" class="advanced-filter-toggle" id="btnFiltrosAvancados" aria-expanded="false" aria-controls="filtrosAvancados">
+            Mais filtros
+          </button>
 
-          <label for="categoria">Categoria</label>
-          <select id="categoria" name="categoria">
-            <option value="">Todas</option>
-          </select>
+          <div class="advanced-filters" id="filtrosAvancados">
+            <label for="ingrediente">Ingrediente</label>
+            <input id="ingrediente" name="ingrediente" type="search" autocomplete="off" placeholder="Ex.: frango, tomate, arroz">
 
-          <button type="submit" class="btn-buscar">Buscar</button>
+            <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="filter-action-row">
+            <span id="statusLista" class="filter-result-count" aria-live="polite">Receitas</span>
+            <button type="submit" class="btn-buscar" aria-label="Buscar" title="Buscar">
+              <svg class="filter-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+            </button>
+            <button type="button" id="btnLimpar" class="btn-limpar" title="Limpar filtros">Limpar</button>
+          </div>
         </form>
-
-        <div class="list-header">
-          <span id="statusLista">Receitas</span>
-          <button type="button" id="btnLimpar" title="Limpar filtros">Limpar</button>
-        </div>
 
         <div class="recipe-list" id="listaReceitas" aria-live="polite"></div>
       </aside>
